@@ -13,13 +13,10 @@
 
 ---
 
-## 🔥 Key Feature: **Custom Fine-Tuned Cross Encoder**
-I personally trained the **Cross Encoder model** specifically for argument validation and logic scoring. Unlike generic embeddings, this model is fine-tuned to detect logical coherence and argument strength with high precision.
-
----
 
 ## 🚀 Features
 
+- **Custom Fine-Tuned Cross Encoder**: fine-tuned model to detect logical coherence and argument strength.
 - **Logical Analysis**: Deconstructs arguments into Claim → Evidence.
 - **Bias Detection**: Identifies cognitive traps like Sunk Cost Fallacy.
 - **RAG Context**: Checks new decisions against your personal archive.
