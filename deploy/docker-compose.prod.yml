@@ -1,0 +1,139 @@
+version: '3.8'
+
+networks:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
+    internal: true  # No internet access for DB and Qdrant
+
+volumes:
+  postgres_data:
+  qdrant_data:
+
+services:
+  # PostgreSQL Database
+  postgresql:
+    image: postgres:15-alpine
+    container_name: decisions_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-decisions}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: decisions_qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend API
+  backend:
+    image: doxanocap/decisions-backend:prod
+    container_name: decisions_backend
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgresql:5432/${POSTGRES_DB:-decisions}
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-decisions}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-m3}
+      RERANKER_MODEL: ${RERANKER_MODEL:-BAAI/bge-reranker-base}
+      CROSS_ENCODER_MODEL: ${CROSS_ENCODER_MODEL:-cross-encoder/ms-marco-MiniLM-L-12-v2}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+    ports:
+      - "8000:8000"
+    networks:
+      - frontend_net
+      - backend_net
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G  # Optimal for 130MB model + FastAPI
+          cpus: '1.5'
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s  # Allow time for model loading
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Frontend
+  frontend:
+    image: doxanocap/decisions-frontend:prod
+    container_name: decisions_frontend
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ${API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend_net
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:15-alpine
+    container_name: decisions_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=decisions
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: decisions_qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # server:
+  #   build: 
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   container_name: decisions_server
+  #   restart: always
+  #   depends_on:
+  #     - postgresql
+  #     - qdrant
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgresql:5432/decisions
+  #     - QDRANT_HOST=qdrant
+  #     - QDRANT_PORT=6333
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./server:/app
+
+  # client:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile
+  #   container_name: decisions_client
+  #   restart: always
+  #   depends_on:
+  #     - server
+  #   environment:
+  #     - API_URL=http://server:8000
+  #   ports:
+  #     - "8501:8501"
+  #   volumes:
+  #     - ./client:/app
+
+volumes:
+  postgres_data:
+  qdrant_data:

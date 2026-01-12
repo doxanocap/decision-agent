@@ -1,0 +1,123 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment Variables (CRITICAL - Never commit!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Database / Data (Never commit user data!)
+postgres_data/
+qdrant_data/
+*.sqlite3
+*.db
+
+# ML Models & Weights (CRITICAL - Too large for git!)
+models/*/
+!models/aqm/
+models/aqm/*.safetensors
+models/aqm/*.bin
+models/aqm/*.pt
+models/aqm/*.pth
+models/aqm/*.onnx
+models/aqm/pytorch_model.bin
+models/aqm/model.safetensors
+# Keep only code and config
+!models/aqm/model.py
+!models/aqm/model.ipynb
+!models/aqm/README.md
+!models/aqm/config.json
+
+# Node.js / Frontend
+node_modules/
+front/node_modules/
+front/dist/
+front/build/
+front/.next/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.log
+*.tmp
+
+# Docker
+.dockerignore
+
+# Artifacts (Internal planning - not for public repo)
+.gemini/
+
+# Test outputs
+test_output/
+coverage/
+.pytest_cache/
+.coverage
+
+# Alembic (Keep migrations, but not temp files)
+server/alembic/versions/*.pyc
+
+# Secrets & API Keys (CRITICAL!)
+**/secrets/
+**/*secret*
+**/*key*.json
+!server/core/config.py
+
+# Large files (use Git LFS if needed)
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# macOS
+.Spotlight-V100
+.Trashes

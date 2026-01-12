@@ -1,0 +1,68 @@
+# Multi-stage Dockerfile for Backend (Production-optimized)
+# Stage 1: Builder - Download models and dependencies
+FROM python:3.13-slim as builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies (CPU-only torch to save 1.5GB)
+RUN pip install --no-cache-dir --user \
+    torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir --user -r requirements.txt
+
+# Pre-download ML models (bake into image)
+RUN python3 -c "from sentence_transformers import CrossEncoder; \
+    CrossEncoder('cross-encoder/ms-marco-MiniLM-L-12-v2')" && \
+    python3 -c "from FlagEmbedding import BGEM3FlagModel; \
+    BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)" && \
+    python3 -c "from FlagEmbedding import FlagReranker; \
+    FlagReranker('BAAI/bge-reranker-base', use_fp16=False)"
+
+# Copy local model if exists
+COPY models/ /app/models/ 2>/dev/null || true
+
+# Stage 2: Runtime - Minimal production image
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+# Copy Python packages from builder
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+COPY --from=builder --chown=appuser:appuser /root/.cache /home/appuser/.cache
+
+# Copy local models from builder
+COPY --from=builder --chown=appuser:appuser /app/models /app/models
+
+# Update PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PYTHONPATH=/app
+
+# Copy application code
+COPY --chown=appuser:appuser server/ /app/server/
+COPY --chown=appuser:appuser scripts/ /app/scripts/
+COPY --chown=appuser:appuser alembic.ini /app/
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python3 -c "import requests; requests.get('http://localhost:8000/health', timeout=5)"
+
+# Expose port
+EXPOSE 8000
+
+# Run application
+CMD ["python3", "-m", "uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
