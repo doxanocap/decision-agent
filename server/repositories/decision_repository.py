@@ -44,11 +44,12 @@ class DecisionRepository:
         query = self.db.query(DecisionModel)
         if user_id:
             query = query.filter(DecisionModel.user_id == user_id)
-        return query.order_by(DecisionModel.timestamp.desc())\
-            .offset(skip)\
-            .limit(limit)\
-        
+        return (
+            query.order_by(DecisionModel.timestamp.desc())
+            .offset(skip)
+            .limit(limit)
             .all()
+        )
 
     def get_by_id(self, decision_id: UUID) -> Optional[DecisionModel]:
         return self.db.query(DecisionModel).filter(DecisionModel.id == decision_id).first()
@@ -79,7 +80,6 @@ class DecisionRepository:
                 db_decision.llm_analysis = llm_analysis
             if retrieved_context is not None:
                 db_decision.retrieved_context = retrieved_context
-            
             self.db.commit()
             self.db.refresh(db_decision)
         return db_decision

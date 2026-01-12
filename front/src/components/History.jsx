@@ -173,65 +173,56 @@ const DecisionCard = ({ decision, index, isExpanded, onToggle, onConfirm, outcom
                         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                     >
                         <div className="px-8 pb-10 pt-4 space-y-12 border-t border-white/5">
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                                <div className="lg:col-span-7 space-y-12">
-                                    <section className="space-y-6">
-                                        <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Context Archive</h4>
-                                        <p className="text-zinc-300 leading-relaxed text-lg whitespace-pre-wrap">
-                                            {decision.context}
-                                        </p>
-                                    </section>
+                            {/* Layout: Single Column Stack */}
+                            <div className="space-y-12">
+                                <section className="space-y-6">
+                                    <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Context Archive</h4>
+                                    <p className="text-zinc-300 leading-relaxed text-lg whitespace-pre-wrap">
+                                        {decision.context}
+                                    </p>
+                                </section>
 
+                                <section className="space-y-8">
+                                    <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Evaluated Paths</h4>
+                                    <div className="space-y-4">
+                                        {decision.arguments?.map((arg, idx) => (
+                                            <PathItem key={idx} arg={arg} />
+                                        ))}
+                                    </div>
+                                </section>
+
+                                {decision.llm_analysis && (
                                     <section className="space-y-8">
-                                        <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Evaluated Paths</h4>
-                                        <div className="space-y-8">
-                                            {decision.arguments?.map((arg, idx) => (
-                                                <div key={idx} className="space-y-4 relative pl-6 border-l border-white/5 group/path">
-                                                    <div className="absolute top-0 left-[-1px] w-[2px] h-4 bg-indigo-500 opacity-0 group-hover/path:opacity-100 transition-opacity" />
-                                                    <div className="flex items-center gap-3">
-                                                        <Tag size={14} className="text-indigo-500" />
-                                                        <span className="text-sm font-bold text-white tracking-tight">{arg.variant_name}</span>
-                                                    </div>
-                                                    <p className="text-sm text-zinc-400 leading-relaxed max-w-xl">
-                                                        {arg.text}
-                                                    </p>
+                                        <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">AI Analysis</h4>
+                                        <div className="space-y-6">
+                                            {decision.llm_analysis.key_weak_points_to_reconsider && decision.llm_analysis.key_weak_points_to_reconsider.length > 0 && (
+                                                <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-2xl space-y-3">
+                                                    <h5 className="text-xs font-bold text-amber-400 uppercase tracking-wider">Key Weak Points</h5>
+                                                    <ul className="space-y-2">
+                                                        {decision.llm_analysis.key_weak_points_to_reconsider.map((point, idx) => (
+                                                            <li key={idx} className="flex items-start gap-2 text-sm text-zinc-300">
+                                                                <span className="text-amber-400 mt-0.5">•</span>
+                                                                <span className="leading-relaxed">{point}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
                                                 </div>
-                                            ))}
+                                            )}
+
+                                            {decision.llm_analysis.final_note && (
+                                                <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                                                    <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Final Note</h5>
+                                                    <p className="text-sm text-zinc-300 leading-relaxed">{decision.llm_analysis.final_note}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </section>
+                                )}
 
-                                    {decision.llm_analysis && (
-                                        <section className="space-y-8">
-                                            <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">AI Analysis</h4>
-                                            <div className="space-y-6">
-                                                {decision.llm_analysis.key_weak_points_to_reconsider && decision.llm_analysis.key_weak_points_to_reconsider.length > 0 && (
-                                                    <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-2xl space-y-3">
-                                                        <h5 className="text-xs font-bold text-amber-400 uppercase tracking-wider">Key Weak Points</h5>
-                                                        <ul className="space-y-2">
-                                                            {decision.llm_analysis.key_weak_points_to_reconsider.map((point, idx) => (
-                                                                <li key={idx} className="flex items-start gap-2 text-sm text-zinc-300">
-                                                                    <span className="text-amber-400 mt-0.5">•</span>
-                                                                    <span className="leading-relaxed">{point}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-
-                                                {decision.llm_analysis.final_note && (
-                                                    <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                                                        <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Final Note</h5>
-                                                        <p className="text-sm text-zinc-300 leading-relaxed">{decision.llm_analysis.final_note}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </section>
-                                    )}
-                                </div>
-
-                                <div className="lg:col-span-5">
+                                {/* Track Result - Now at the bottom */}
+                                <div className="pt-8 border-t border-white/5">
                                     {decision.outcome ? (
-                                        <div className="p-8 bg-white/5 border border-white/10 rounded-3xl space-y-6">
+                                        <div className="p-8 bg-white/5 border border-white/10 rounded-3xl space-y-6 max-w-2xl">
                                             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-[0.2em]">
                                                 <CheckCircle2 size={16} /> Result Logged
                                             </div>
@@ -246,9 +237,9 @@ const DecisionCard = ({ decision, index, isExpanded, onToggle, onConfirm, outcom
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="p-8 bg-indigo-600/5 border border-indigo-500/20 rounded-[2rem] space-y-8">
+                                        <div className="group/track p-8 bg-indigo-600/5 border border-indigo-500/20 rounded-[2rem] space-y-8 max-w-2xl hover:bg-indigo-600/10 transition-colors">
                                             <div className="space-y-2">
-                                                <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-[0.2em]">Track Result</h4>
+                                                <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-[0.2em] group-hover/track:text-indigo-300 transition-colors">Track Result</h4>
                                                 <p className="text-zinc-500 text-xs leading-relaxed">Record which path you chose and what happened. This helps improve future recommendations.</p>
                                             </div>
 
@@ -293,6 +284,52 @@ const DecisionCard = ({ decision, index, isExpanded, onToggle, onConfirm, outcom
                 )}
             </AnimatePresence>
         </motion.div>
+    );
+};
+
+const PathItem = ({ arg }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div
+            onClick={() => setIsOpen(!isOpen)}
+            className="group/path cursor-pointer border border-white/5 hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl transition-all duration-300"
+        >
+            <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 group-hover/path:bg-indigo-500/20 group-hover/path:text-indigo-300 transition-colors">
+                        <Tag size={16} />
+                    </div>
+                    <span className="text-sm font-bold text-zinc-300 group-hover/path:text-white transition-colors">{arg.variant_name}</span>
+                </div>
+                <ChevronDown
+                    size={16}
+                    className={cn(
+                        "text-zinc-500 transition-transform duration-300",
+                        isOpen ? "rotate-180 text-zinc-300" : ""
+                    )}
+                />
+            </div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <div className="px-4 pb-4 pt-0">
+                            <div className="pt-4 border-t border-white/5">
+                                <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                                    {arg.text}
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 

@@ -390,11 +390,15 @@ const NewDecision = () => {
 
                                                         {/* Logical Fallacies */}
                                                         {details.logical_fallacies?.length > 0 && (
-                                                            <div className="bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20 mt-2">
-                                                                <div className="text-xs font-bold text-yellow-500 uppercase mb-1">Logical Fallacies Detected</div>
-                                                                <ul className="space-y-1">
+                                                            <div className="bg-amber-500/10 p-3 rounded-lg border border-amber-500/20 mt-2">
+                                                                <div className="text-xs font-bold text-amber-500 uppercase mb-2">Logical Fallacies Detected</div>
+                                                                <ul className="space-y-3">
                                                                     {details.logical_fallacies.map((item, i) => (
-                                                                        <li key={i} className="text-sm text-zinc-300 italic">"{item}"</li>
+                                                                        <li key={i} className="text-sm">
+                                                                            <div className="font-semibold text-amber-400">{item.type}</div>
+                                                                            <div className="text-zinc-300 italic mb-1">"{item.quote}"</div>
+                                                                            <div className="text-zinc-400 text-xs">{item.explanation}</div>
+                                                                        </li>
                                                                     ))}
                                                                 </ul>
                                                             </div>

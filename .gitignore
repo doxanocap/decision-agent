@@ -58,13 +58,11 @@ qdrant_data/
 # ML Models & Weights (CRITICAL - Too large for git!)
 models/*/
 !models/aqm/
-models/aqm/*.safetensors
-models/aqm/*.bin
-models/aqm/*.pt
-models/aqm/*.pth
-models/aqm/*.onnx
-models/aqm/pytorch_model.bin
-models/aqm/model.safetensors
+**/*.safetensors
+**/*.bin
+**/*.pt
+**/*.pth
+**/*.onnx
 # Keep only code and config
 !models/aqm/model.py
 !models/aqm/model.ipynb

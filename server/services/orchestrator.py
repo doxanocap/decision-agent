@@ -100,16 +100,21 @@ class OrchestratorService:
                 logger.warning(f"Qdrant indexing failed, but analysis completed: {str(e)}")
                 # Don't fail the entire analysis if indexing fails
             
-            # 7. Save results
+            # 7. Final Update (Success)
+            # TRANSFORM: Map UUID scores to Variant Names for UI display
+            ui_ml_scores = {}
+            for arg in ml_input:
+                if arg['id'] in ml_scores:
+                    ui_ml_scores[arg['variant_name']] = ml_scores[arg['id']]
+
             repo.update_analysis(
-                decision_id,
-                status="completed",
-                ml_scores=ml_scores,
+                decision_id, 
+                status="completed", 
+                ml_scores=ui_ml_scores,
                 llm_analysis=reasoning_analysis.dict(),
                 retrieved_context=retrieved_context
             )
-            
-            logger.info(f"Analysis completed for {decision_id}")
+            logger.info(f"Analysis completed successfully for {decision_id}")
             
         except Exception as e:
             logger.error(f"Unexpected error in analysis: {str(e)}")
