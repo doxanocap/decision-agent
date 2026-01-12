@@ -83,7 +83,7 @@ async def get_analysis_status(
             "ml_scores": db_decision.ml_scores,
             "llm_analysis": db_decision.llm_analysis,
             "retrieved_context": db_decision.retrieved_context
-        } if db_decision.analysis_status == "completed" else None
+        } if db_decision.analysis_status in ["completed", "failed"] else None
     }
 
 

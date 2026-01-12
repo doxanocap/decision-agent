@@ -70,14 +70,37 @@ const NewDecision = () => {
                     setAnalysisStatus('');
                 } else if (statusData.status === 'failed') {
                     clearInterval(pollIntervalRef.current);
-                    setError('Analysis failed. Please try again or check your input.');
+
+                    const failureReason = statusData.results?.llm_analysis?.message ||
+                        statusData.results?.llm_analysis?.error ||
+                        'Analysis failed. Please check your arguments.';
+
+                    // Specific handling for INSUFFICIENT_DATA
+                    if (statusData.results?.llm_analysis?.error === 'INSUFFICIENT_DATA') {
+                        const invalidArgs = statusData.results?.llm_analysis?.invalid_arguments || [];
+                        const argMsg = invalidArgs.length > 0 ? `Issues in: ${invalidArgs.join(', ')}` : '';
+                        setError(`Argument Validation Failed: ${statusData.results.llm_analysis.message}. ${argMsg}`);
+                    } else {
+                        const technical = statusData.results?.llm_analysis?.technical_details
+                            ? ` (${statusData.results.llm_analysis.technical_details})`
+                            : '';
+                        setError(`Analysis Failure: ${failureReason}${technical}`);
+                    }
+
                     setLoading(false);
                     setAnalysisStatus('');
                 }
             } catch (err) {
                 console.error('Polling error:', err);
                 clearInterval(pollIntervalRef.current);
-                setError('Failed to check analysis status. Please refresh and check History.');
+
+                // Handle Rollback (404 = Decision deleted)
+                if (err.response && err.response.status === 404) {
+                    setError('Analysis failed and was automatically rolled back. Please try again.');
+                } else {
+                    setError('Failed to check analysis status. Please refresh and check History.');
+                }
+
                 setLoading(false);
                 setAnalysisStatus('');
             }
@@ -124,7 +147,8 @@ const NewDecision = () => {
                 setLoading(false);
             }
         } catch (err) {
-            setError(err.userMessage || err.message || 'Failed to start analysis');
+            const msg = err.userMessage || err.message || 'Failed to start analysis';
+            setError(typeof msg === 'object' ? JSON.stringify(msg) : String(msg));
             setLoading(false);
             setAnalysisStatus('');
             console.error(err);
@@ -321,14 +345,71 @@ const NewDecision = () => {
                                 <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">AI Analysis</h3>
                                 <div className="space-y-6">
                                     {result.llm_analysis.argument_quality_comparison && (
-                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl space-y-4">
+                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl space-y-8">
                                             <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Quality Comparison</h4>
-                                            {Object.entries(result.llm_analysis.argument_quality_comparison).map(([variant, analysis]) => (
-                                                <div key={variant} className="space-y-2">
-                                                    <p className="text-sm font-semibold text-zinc-300">{variant}</p>
-                                                    <p className="text-zinc-400 leading-relaxed">{analysis}</p>
-                                                </div>
-                                            ))}
+
+                                            <div className="grid grid-cols-1 gap-8">
+                                                {Object.entries(result.llm_analysis.argument_quality_comparison).map(([variant, details]) => (
+                                                    <div key={variant} className="space-y-4 p-5 bg-white/5 rounded-2xl border border-white/5">
+                                                        <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-2">
+                                                            <h5 className="text-lg font-bold text-white">{variant}</h5>
+                                                            <span className={`text-xs px-2 py-1 rounded bg-white/10 ${details.data_quality === 'SUFFICIENT' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                                {details.data_quality}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Strengths */}
+                                                        {details.strengths?.length > 0 && (
+                                                            <div>
+                                                                <div className="text-xs font-bold text-green-400 uppercase mb-2">Strengths</div>
+                                                                <ul className="space-y-1">
+                                                                    {details.strengths.map((item, i) => (
+                                                                        <li key={i} className="text-sm text-zinc-300 flex items-start gap-2">
+                                                                            <span className="text-green-500 mt-1.5 w-1 h-1 rounded-full flex-shrink-0 bg-green-500" />
+                                                                            <span>{item}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Weaknesses */}
+                                                        {details.weaknesses?.length > 0 && (
+                                                            <div>
+                                                                <div className="text-xs font-bold text-red-400 uppercase mb-2 mt-4">Weaknesses</div>
+                                                                <ul className="space-y-1">
+                                                                    {details.weaknesses.map((item, i) => (
+                                                                        <li key={i} className="text-sm text-zinc-300 flex items-start gap-2">
+                                                                            <span className="text-red-500 mt-1.5 w-1 h-1 rounded-full flex-shrink-0 bg-red-500" />
+                                                                            <span>{item}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Logical Fallacies */}
+                                                        {details.logical_fallacies?.length > 0 && (
+                                                            <div className="bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20 mt-2">
+                                                                <div className="text-xs font-bold text-yellow-500 uppercase mb-1">Logical Fallacies Detected</div>
+                                                                <ul className="space-y-1">
+                                                                    {details.logical_fallacies.map((item, i) => (
+                                                                        <li key={i} className="text-sm text-zinc-300 italic">"{item}"</li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Missing Considerations */}
+                                                        {details.missing_considerations?.length > 0 && (
+                                                            <div className="mt-4">
+                                                                <div className="text-xs font-bold text-zinc-500 uppercase mb-2">Consider Adding</div>
+                                                                <p className="text-sm text-zinc-400">{details.missing_considerations.join(' • ')}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 

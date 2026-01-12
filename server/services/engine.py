@@ -123,5 +123,18 @@ class DecisionEngine:
         return results
 
 
+    def delete_decision_vectors(self, decision_id: str):
+        """Delete vectors associated with a decision ID."""
+        try:
+            self.qdrant.delete(
+                collection_name=config.QDRANT_COLLECTION,
+                points_selector=models.PointIdsList(
+                    points=[decision_id]
+                )
+            )
+            print(f"Deleted vectors for decision {decision_id}")
+        except Exception as e:
+            print(f"Error deleting vectors for {decision_id}: {e}")
+
 # Singleton
 engine = DecisionEngine()

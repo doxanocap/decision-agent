@@ -43,12 +43,12 @@ class ArgumentQualityValidator:
         if word_count < cls.MIN_WORD_COUNT:
             return False, f"Argument too brief ({word_count} words, min {cls.MIN_WORD_COUNT})"
         
-        # Check for reasoning keywords
-        text_lower = text.lower()
-        has_reasoning = any(keyword in text_lower for keyword in cls.REASONING_KEYWORDS)
-        
-        if not has_reasoning:
-            return False, "Argument lacks reasoning keywords (e.g., 'because', 'так как')"
+        # Reasoning keywords check removed for MVP - too strict
+        # text_lower = text.lower()
+        # has_reasoning = any(keyword in text_lower for keyword in cls.REASONING_KEYWORDS)
+        # 
+        # if not has_reasoning:
+        #     return False, "Argument lacks reasoning keywords (e.g., 'because', 'так как')"
         
         return True, ""
     
@@ -136,5 +136,6 @@ class ArgumentQualityValidator:
         has_evidence = any(marker in text_lower for marker in evidence_markers)
         if has_evidence:
             score += 0.2
+        
         
         return min(score, 1.0)  # Cap at 1.0

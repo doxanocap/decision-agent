@@ -1,4 +1,4 @@
-# Decisions - AI-Powered Decision Analysis
+# decision-agent
 
 <div align="center">
 
@@ -187,6 +187,14 @@ make deploy-prod
 ### Docker Images
 - `doxanocap/decisions-backend:prod` (~500MB)
 - `doxanocap/decisions-frontend:prod` (~50MB)
+
+**All deployment files are in `deploy/` directory:**
+- `deploy/Dockerfile.backend` - Backend image
+- `deploy/Dockerfile.frontend` - Frontend image
+- `deploy/docker-compose.prod.yml` - Production orchestration
+- `deploy/nginx.conf` - Nginx configuration
+- `deploy/build.sh` - Build script
+- `deploy/push.sh` - Push script
 
 **Optimizations:**
 - ✅ ML models baked into image

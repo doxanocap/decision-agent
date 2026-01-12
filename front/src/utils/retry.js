@@ -102,6 +102,20 @@ export function getErrorMessage(error) {
             return 'Server error. Our team has been notified.';
         }
 
+        if (status === 422) {
+            if (Array.isArray(detail)) {
+                return detail.map(err => err.msg).join(', ');
+            }
+            if (typeof detail === 'object') {
+                return JSON.stringify(detail);
+            }
+            return detail || 'Validation error. Please check your input.';
+        }
+
+        if (typeof detail === 'object') {
+            return JSON.stringify(detail);
+        }
+
         return detail || 'An unexpected error occurred.';
     }
 

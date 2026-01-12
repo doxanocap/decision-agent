@@ -130,8 +130,20 @@ class SystemicInconsistency(BaseModel):
     conflict_description: str
 
 
+class LogicalFallacy(BaseModel):
+    type: str
+    quote: str
+    explanation: str
+
+class ArgumentQualityDetails(BaseModel):
+    strengths: List[str]
+    weaknesses: List[str]
+    logical_fallacies: List[LogicalFallacy]
+    missing_considerations: List[str]
+    data_quality: str
+
 class ReasoningAnalysis(BaseModel):
-    argument_quality_comparison: Dict[str, str]
+    argument_quality_comparison: Dict[str, ArgumentQualityDetails]
     alignment_with_model_scores: str
     detected_reasoning_patterns: str
     key_weak_points_to_reconsider: List[str]

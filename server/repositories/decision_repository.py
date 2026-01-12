@@ -47,6 +47,7 @@ class DecisionRepository:
         return query.order_by(DecisionModel.timestamp.desc())\
             .offset(skip)\
             .limit(limit)\
+        
             .all()
 
     def get_by_id(self, decision_id: UUID) -> Optional[DecisionModel]:
@@ -82,3 +83,12 @@ class DecisionRepository:
             self.db.commit()
             self.db.refresh(db_decision)
         return db_decision
+
+    def delete(self, decision_id: UUID) -> bool:
+        """Delete decision and cascade delete variants/arguments."""
+        db_decision = self.get_by_id(decision_id)
+        if db_decision:
+            self.db.delete(db_decision)
+            self.db.commit()
+            return True
+        return False

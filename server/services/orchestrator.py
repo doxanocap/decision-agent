@@ -67,12 +67,7 @@ class OrchestratorService:
                 ml_scores = self.ml_scoring.score_arguments(ml_input, decision_data.context)
             except Exception as e:
                 logger.error(f"ML Scoring failed: {str(e)}")
-                error_details = {
-                    "error": "ML_SCORING_FAILED",
-                    "user_message": "Не удалось оценить качество аргументов. Попробуйте еще раз через минуту.",
-                    "technical_details": str(e)
-                }
-                repo.update_analysis(decision_id, status="failed", llm_analysis=error_details)
+                self._rollback_and_delete(decision_id, repo)
                 return
             
             # 4. RAG (graceful degradation if fails)
@@ -94,24 +89,7 @@ class OrchestratorService:
                 )
             except Exception as e:
                 logger.error(f"LLM Analysis failed: {str(e)}")
-                
-                # Check if it's an OpenAI API error
-                error_message = str(e).lower()
-                if "rate limit" in error_message or "quota" in error_message:
-                    user_message = "ИИ перегружен запросами. Пожалуйста, попробуйте через минуту. 🕐"
-                elif "timeout" in error_message or "timed out" in error_message:
-                    user_message = "ИИ не успел обработать запрос. Попробуйте упростить аргументы или повторите попытку."
-                elif "api key" in error_message or "authentication" in error_message:
-                    user_message = "Проблема с доступом к ИИ. Мы уже работаем над решением. Попробуйте позже."
-                else:
-                    user_message = "ИИ временно недоступен. Попробуйте еще раз через минуту. 🔄"
-                
-                error_details = {
-                    "error": "LLM_ANALYSIS_FAILED",
-                    "user_message": user_message,
-                    "technical_details": str(e)
-                }
-                repo.update_analysis(decision_id, status="failed", llm_analysis=error_details)
+                self._rollback_and_delete(decision_id, repo)
                 return
             
             # 6. Indexing in Qdrant (graceful degradation if fails)
@@ -135,12 +113,17 @@ class OrchestratorService:
             
         except Exception as e:
             logger.error(f"Unexpected error in analysis: {str(e)}")
-            error_details = {
-                "error": "UNEXPECTED_ERROR",
-                "user_message": "Произошла непредвиденная ошибка. Наша команда уже уведомлена. Попробуйте позже.",
-                "technical_details": str(e)
-            }
-            repo.update_analysis(decision_id, status="failed", llm_analysis=error_details)
+            self._rollback_and_delete(decision_id, repo)
+
+    def _rollback_and_delete(self, decision_id: UUID, repo: DecisionRepository):
+        """Rollback: delete vectors and decision record."""
+        try:
+            logger.warning(f"Rolling back decision {decision_id} due to failure...")
+            self.engine.delete_decision_vectors(str(decision_id))
+            repo.delete(decision_id)
+            logger.info(f"Rollback successful for {decision_id}")
+        except Exception as e:
+            logger.error(f"Rollback failed for {decision_id}: {e}")
 
 
 # Singleton
